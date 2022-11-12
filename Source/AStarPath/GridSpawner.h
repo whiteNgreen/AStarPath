@@ -33,7 +33,7 @@ public:
 		TSubclassOf<AStarNode> SpawnClass;
 
 	//TArray<TUniquePtr<AStarNode>> Nodes;
-	TArray<FPath*> paths;
+	TArray<FLine*> paths;
 
 protected:
 	// Called when the game starts or when spawned

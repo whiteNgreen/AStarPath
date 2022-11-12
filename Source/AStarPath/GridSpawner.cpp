@@ -43,20 +43,20 @@ void AGridSpawner::SpawnGrid(int Rez)
 	}
 	for (size_t i{1}; i < list.Num(); i++)
 	{
-		if (list.Num() < i + 1) { PRINTLONG("+1 CONTINUE"); break;  }
+		if (list.Num() < i + 1) { /*PRINTLONG("+1 CONTINUE");*/ break;  }
 
 		a = list[i-1];
 		b = list[i];
-		FPath* F;
+		FLine* F;
 		if (i%10 != 0 || i==0){
-			F = new FPath(a, b);
-			paths.Add(F);
+			F = new FLine(a, b);
+			paths.AddUnique(F);
 		}
 
-		if (list.Num() < i + 10) { PRINTLONG("*1 CONTINUE"); continue; }
+		if (list.Num() < i + 10) { /*PRINTLONG("*1 CONTINUE");*/ continue; }
 		b = list[i-1 + 10];
-		F = new FPath(a, b);
-		paths.Add(F);
+		F = new FLine(a, b);
+		paths.AddUnique(F);
 	}
 }
 
@@ -69,5 +69,6 @@ void AGridSpawner::Tick(float DeltaTime)
 	{
 		it->ShowPath(GetWorld());
 	}
+	//PRINTPAR("paths : %i", paths.Num());
 }
 

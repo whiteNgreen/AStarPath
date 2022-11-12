@@ -7,11 +7,13 @@
 
 #include "StarNode.h"
 #include "DebugMacros.h"
+#include "Interfaces/MaterialChangeInterface.h"
 
 #include "PathFinder.generated.h"
 
 UCLASS()
-class ASTARPATH_API APathFinder : public APawn
+class ASTARPATH_API APathFinder : public APawn,
+	public IMaterialChangeInterface
 {
 	GENERATED_BODY()
 
@@ -21,6 +23,30 @@ public:
 
 
 	TArray<AStarNode*> Nodes_Registered;
+
+	void LeftClick();
+	void LeftUnClick();
+
+	void RightClick();
+	void RightUnClick();
+
+	void RightArrowPress();
+	void RightArrowUnPress();
+
+	bool Trace(const EMatType& type);
+
+	UFUNCTION(BlueprintImplementableEvent)
+		void RightClick_Event(const FHitResult& Hit, EMatType click);
+	UFUNCTION(BlueprintImplementableEvent)
+		void LeftClick_Event(const FHitResult& Hit, EMatType click);
+
+	AActor* ClickedActor{ nullptr };
+	AActor* TargetActor{ nullptr };
+	AActor* StartActor{ nullptr };
+
+	AStarNode* current{ nullptr };
+	FPath CollectedPath;
+
 
 protected:
 	// Called when the game starts or when spawned
@@ -33,4 +59,5 @@ public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
+	void MatChange_Pure(EMatType click) override {}
 };
