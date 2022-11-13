@@ -7,13 +7,15 @@
 #include "MaterialChangeInterface.generated.h"
 
 UENUM(BlueprintType)
-enum EMatType
+enum class EMatType : uint8
 {
 	CL_None,
 	CL_Start,
 	CL_Target,
 	CL_Path,
-	CL_Checked
+	CL_Checked,
+	CL_Processed,
+	CL_Block
 };
 
 // This class does not need to be modified.
@@ -33,7 +35,12 @@ class ASTARPATH_API IMaterialChangeInterface
 		// Add interface functions to this class. This is the class that will be inherited to implement this interface.
 public:
 	//virtual void Reset() = 0;
-	EMatType MatType;
+	EMatType MatType = EMatType::CL_None;
+	EMatType GetMatType() const { return MatType; }
+	bool IsType(EMatType const& type) { 
+		if (type == MatType) return true;
+		return false;
+	}
 
 	UFUNCTION(BlueprintNativeEvent, Category = "Functions")
 		void MatChange(EMatType click);

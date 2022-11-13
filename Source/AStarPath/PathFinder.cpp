@@ -43,8 +43,14 @@ void APathFinder::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 	PlayerInputComponent->BindAction("MouseRight", IE_Pressed, this, &APathFinder::RightClick);
 	PlayerInputComponent->BindAction("MouseRight", IE_Released, this, &APathFinder::RightUnClick);
 
-	PlayerInputComponent->BindAction("RightArrow", IE_Released, this, &APathFinder::RightArrowPress);
+	PlayerInputComponent->BindAction("MouseMiddle", IE_Pressed, this, &APathFinder::MiddleClick);
+	PlayerInputComponent->BindAction("MouseMiddle", IE_Released, this, &APathFinder::MiddleUnClick);
+
+	PlayerInputComponent->BindAction("RightArrow", IE_Pressed, this, &APathFinder::RightArrowPress);
 	PlayerInputComponent->BindAction("RightArrow", IE_Released, this, &APathFinder::RightArrowUnPress);
+
+	PlayerInputComponent->BindAction("LeftArrow", IE_Pressed, this, &APathFinder::LeftArrowPress);
+	PlayerInputComponent->BindAction("LeftArrow", IE_Released, this, &APathFinder::LeftArrowUnPress);
 }
 
 
@@ -67,9 +73,7 @@ bool APathFinder::Trace(const EMatType& type)
 
 
 	IMaterialChangeInterface* mat = Cast<IMaterialChangeInterface>(Hit.GetActor());
-	if (mat) {
-		mat->MatChange_Pure(type);
-	}
+
 
 	if (type == EMatType::CL_Start) {
 		if (Hit.GetActor() != StartActor) {
@@ -79,7 +83,6 @@ bool APathFinder::Trace(const EMatType& type)
 					mat->MatChange_Pure(EMatType::CL_None);
 					CollectedPath.ClearPath();
 					CollectedPath.ClearChecked();
-
 					/* UnChecks checked connected nodes */
 					//AStarNode* StartNode = Cast<AStarNode>(StartActor);
 					//if (StartNode)
@@ -96,9 +99,11 @@ bool APathFinder::Trace(const EMatType& type)
 		//	StartNode->CheckConnected();
 		//}
 		//else { CollectedPath.mStartNode = nullptr; }
-
+		mat = Cast<IMaterialChangeInterface>(Hit.GetActor());
+		if (mat) mat->MatChange_Pure(type);
 		return true;
 	}
+
 	if (type == EMatType::CL_Target) {
 		if (Hit.GetActor() != TargetActor) {
 			mat = Cast<IMaterialChangeInterface>(TargetActor);
@@ -111,9 +116,33 @@ bool APathFinder::Trace(const EMatType& type)
 			}
 		}
 		TargetActor = Hit.GetActor();
+
+		mat = Cast<IMaterialChangeInterface>(Hit.GetActor());
+		if (mat) mat->MatChange_Pure(type);
 		return true;
 	}
 
+	if (type == EMatType::CL_Block)
+	{
+		if (mat)
+		{
+			AStarNode* N = Cast<AStarNode>(Hit.GetActor());
+			EMatType MT = EMatType::CL_None;
+			if (mat->GetMatType() == EMatType::CL_Block) { // Un-Blocking nodes
+				MT = EMatType::CL_None;
+				N->SetNodeType(ENodeType::NT_None);
+				BlockedNodes.Remove(N);
+			}
+			else {	// Blocking Node
+				MT = EMatType::CL_Block;
+				N->SetNodeType(ENodeType::NT_Block);
+				BlockedNodes.Add(N);
+				//CollectedPath.RemoveNode(N);
+			}
+			mat->MatChange_Pure(MT);
+		}
+		return true;
+	}
 
 	mat = Cast<IMaterialChangeInterface>(ClickedActor);
 	if (mat) {
@@ -147,13 +176,28 @@ void APathFinder::RightClick()
 	if (!bRightClick)
 	{
 		bRightClick = true;
-		Trace(EMatType::CL_Target);
+		Trace(EMatType::CL_Block);
 	}
 }
 void APathFinder::RightUnClick()
 {
 	bRightClick = false;
 }
+
+static bool bMiddleClick{};
+void APathFinder::MiddleClick()
+{
+	if (!bMiddleClick)
+	{
+		bMiddleClick = true;
+		Trace(EMatType::CL_Target);
+	}
+}
+void APathFinder::MiddleUnClick()
+{
+	bMiddleClick = false;
+}
+
 
 static bool bRightArrowPress{};
 void APathFinder::RightArrowPress()
@@ -163,13 +207,29 @@ void APathFinder::RightArrowPress()
 		bRightArrowPress = true;
 
 
-		AStarNode* StartNode = Cast<AStarNode>(StartActor);
-		AStarNode* TargetNode = Cast<AStarNode>(TargetActor);
+		StartNode = Cast<AStarNode>(StartActor);
+		TargetNode = Cast<AStarNode>(TargetActor);
 		if (StartNode && TargetNode)
 		{
-			CollectedPath.ClearPath();
-			CollectedPath.ClearChecked();
-			FindPath(CollectedPath, StartNode, TargetNode);
+			static TArray<AStarNode*> tmp;
+			ClearArray(tmp);
+			ClearArray(NodePath);
+
+			CollectedPath.ClearPath();	//old
+			CollectedPath.ClearChecked();	//old
+
+			//for (auto& it : NodePath) {
+			//	IMaterialChangeInterface* mat = Cast<IMaterialChangeInterface>(it);
+			//	if (mat) mat->MatChange_Pure(EMatType::CL_None);
+			//}
+			//FindPath(CollectedPath, StartNode, TargetNode);
+
+			NodePath = FindPath(StartNode, TargetNode, tmp);
+			for (auto& it : NodePath) {
+				if (it == TargetNode || it == StartNode) { continue; }
+				IMaterialChangeInterface* mat = Cast<IMaterialChangeInterface>(it);
+				if (mat) mat->MatChange_Pure(EMatType::CL_Path);
+			}
 		}
 	}
 }
@@ -178,5 +238,26 @@ void APathFinder::RightArrowUnPress()
 	bRightArrowPress = false;
 }
 
+
+static bool bLeftArrowPress{};
+void APathFinder::LeftArrowPress()
+{
+	if (!bLeftArrowPress)
+	{
+		bLeftArrowPress = true;
+
+		// Clear blocked nodes
+		for (auto& it : BlockedNodes)
+		{
+			it->MatChange_Pure(EMatType::CL_None);
+			it->SetNodeType(ENodeType::NT_None);
+		}
+		BlockedNodes.Empty();
+	}
+}
+void APathFinder::LeftArrowUnPress()
+{
+	bLeftArrowPress = false;
+}
 
 

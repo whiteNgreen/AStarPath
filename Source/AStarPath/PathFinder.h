@@ -22,13 +22,35 @@ public:
 	APathFinder();
 
 
-	TArray<AStarNode*> Nodes_Registered;
+	TArray<AStarNode*> NodePath;//old
+	TArray<AStarNode*> Nodes_Registered;//old
+	void ClearArray(TArray<AStarNode*>& arr){
+		for (auto& it : arr) {
+			if (it == StartNode || it == TargetNode) { continue; }
+			IMaterialChangeInterface* mat = Cast<IMaterialChangeInterface>(it);
+			if (mat) {
+				if (mat->IsType(EMatType::CL_Block)) { continue; }
+				mat->MatChange_Pure(EMatType::CL_None);
+			}
+		}
+		arr.Empty();
+	}
+	TArray<AStarNode*> BlockedNodes;
+
+	AStarNode* StartNode{ nullptr };
+	AStarNode* TargetNode{ nullptr };
 
 	void LeftClick();
 	void LeftUnClick();
 
 	void RightClick();
 	void RightUnClick();
+
+	void MiddleClick();
+	void MiddleUnClick();
+
+	void LeftArrowPress();
+	void LeftArrowUnPress();
 
 	void RightArrowPress();
 	void RightArrowUnPress();

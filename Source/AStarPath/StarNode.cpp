@@ -61,11 +61,16 @@ void AStarNode::Tick(float DeltaTime)
 	//}
 }
 
-int AStarNode::GetInternalValue(const AStarNode* Target)
+int AStarNode::GetDistanceValue(const AStarNode* Target)
 {
 	return (int)(Target->GetActorLocation() - GetActorLocation()).Length() * floatConverter;
 }
-
+void AStarNode::InitValues(const AStarNode* Start, const AStarNode* Target)
+{
+	//G = GetDistanceValue(Start);
+	H = GetDistanceValue(Target);
+	F = G + H;
+}
 bool FindPath(FPath& Path, AStarNode* Start, const AStarNode* Target)
 {
 	if (!Start || !Target) { return false; }
@@ -97,13 +102,15 @@ AStarNode* AStarNode::FindNextNode(EPathSearch& SearchMode, FPath& path, const A
 	{
 		AStarNode* tmpNode = ConnectedPaths[i]->GetOtherNode(this);
 		if (path.ContainsNode(tmpNode)) { tmpNode = nullptr; continue; }
+		if (tmpNode == Start) { continue; }
+		if (tmpNode->IsBlock()) { continue; }
 
 		if (tmpNode == target){
 			SearchMode = EPathSearch::Found;
 			return tmpNode;
 		}
 
-		Value = ConnectedPaths[i]->Length + tmpNode->GetInternalValue(target);
+		Value = ConnectedPaths[i]->Length + tmpNode->GetDistanceValue(target);
 		if (tmpNode != Start) {
 			tmpNode->MatChange_Pure(EMatType::CL_Checked);
 			path.AddCheckedNode(tmpNode);
@@ -125,3 +132,73 @@ AStarNode* AStarNode::FindNextNode(EPathSearch& SearchMode, FPath& path, const A
 	return Node;
 }
 
+//auto ChangeMat = [&](AStarNode* node, EMatType type) {
+//	IMaterialChangeInterface* mat = Cast<IMaterialChangeInterface>(node);
+//	if (mat) {
+//		mat->
+//	}
+//}
+
+TArray<AStarNode*> FindPath(AStarNode* Start, AStarNode* Target, TArray<AStarNode*>& arr)
+{
+	PRINTLONG("NEW FIND PATH");
+	TArray<AStarNode*> finalPath;
+
+	TArray<AStarNode*> ToSearch;
+	ToSearch.Add(Start);
+	TArray<AStarNode*> Processed;
+
+	while (ToSearch.Num() > 0)
+	{
+		AStarNode* current = ToSearch[0];
+		current->InitValues(Start, Target);
+		arr.Add(current);	// Material
+		if (current != Start && current != Target) current->MatChange_Pure(EMatType::CL_Checked);	// Material
+		for (auto& it : ToSearch)
+		{
+			if (it == current) { continue; } // skip if it is the same node
+			it->InitValues(Start, Target);
+			if (it->F < current->F || it->F == current->F && it->H < current->H)
+				current = it;
+		}
+
+
+		if (current == Target) {
+			auto currentTile = Target;
+			while (currentTile != Start) {
+				finalPath.Add(currentTile);
+				currentTile = currentTile->Connection;
+			}
+			return finalPath;
+		}
+
+		Processed.Add(current);
+		ToSearch.Remove(current);
+
+		for (size_t t{}; t < current->ConnectedPaths.Num(); t++)
+		{
+			AStarNode* Neighbor = current->ConnectedPaths[t]->GetOtherNode(current);
+			bool inSearch = ToSearch.Contains(Neighbor);
+
+			if (Neighbor->IsBlock()) { continue; }
+			if (Processed.Contains(Neighbor)) { continue; }
+
+			int CostToNeighbor = current->G + current->ConnectedPaths[t]->Length;
+
+			if (!inSearch || CostToNeighbor < Neighbor->G)
+			{
+				Neighbor->SetG(CostToNeighbor);
+				Neighbor->Connection = current;
+
+				if (!inSearch) {
+					Neighbor->SetH(Target);
+					ToSearch.Add(Neighbor);
+					arr.Add(Neighbor);	// Material
+				}
+			}
+		}
+		if (current != Start && current != Target) current->MatChange_Pure(EMatType::CL_Processed);	// Material
+	}
+
+	return finalPath;
+}

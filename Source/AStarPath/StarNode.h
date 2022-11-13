@@ -15,7 +15,7 @@
 inline int floatConverter{ 10 };
 
 USTRUCT()
-struct FPath
+struct FPath	// SKIP THIS
 {
 	GENERATED_USTRUCT_BODY()
 
@@ -34,6 +34,13 @@ struct FPath
 		mLines.Add(L);
 		Value += v;
 	}
+	void RemoveNode(class AStarNode* N) {
+		int i{};
+		mNodes.Find(N, i);
+		mNodes.RemoveAt(i);
+		mCheckedNodes.RemoveAt(i);
+		mLines.RemoveAt(i);
+	}
 	void AddCheckedNode(class AStarNode* N)
 	{
 		mCheckedNodes.Add(N);
@@ -49,8 +56,10 @@ struct FPath
 	{
 		for (auto& it : mNodes) {
 			IMaterialChangeInterface* mat = Cast<IMaterialChangeInterface>(it);
-			if (mat)
+			if (mat) {
+				if (mat->IsType(EMatType::CL_Block)) { continue; }
 				mat->MatChange_Pure(EMatType::CL_None);
+			}
 		}
 		mNodes.Empty();
 		mLines.Empty();
@@ -58,9 +67,11 @@ struct FPath
 	void ClearChecked()
 	{
 		for (auto& k : mCheckedNodes) {
-			IMaterialChangeInterface* check = Cast<IMaterialChangeInterface>(k);
-			if (check)
-				check->MatChange_Pure(EMatType::CL_None);
+			IMaterialChangeInterface* mat = Cast<IMaterialChangeInterface>(k);
+			if (mat) {
+				if (mat->IsType(EMatType::CL_Block)) { continue; }
+				mat->MatChange_Pure(EMatType::CL_None);
+			}
 		}
 		mCheckedNodes.Empty();
 	}
@@ -72,6 +83,18 @@ enum EPathSearch
 	Start,
 	Search,
 	Found
+};
+
+UENUM(BlueprintType)
+enum ENodeType
+{
+	NT_None,
+	NT_Start,
+	NT_Path,
+	NT_Target,
+	NT_Checked,
+	NT_Processed,
+	NT_Block
 };
 
 UCLASS()
@@ -92,7 +115,16 @@ public:
 
 	/* A* variables */
 	TArray<FLine*> ConnectedPaths;
-	int GetInternalValue(const AStarNode* Target);
+	int GetDistanceValue(const AStarNode* Target);
+	int F;	// Total DistanceValue
+	int G;	// DistanceValue from StartNode to this
+	int H;	// DistanceValue from TargetNode to this
+	void InitValues(const AStarNode* Start, const AStarNode* Target);
+	void SetG(int& g) { G = g; F = G + H; }
+	void SetH(AStarNode* Target) { H = GetDistanceValue(Target); }
+	AStarNode* Connection{ nullptr };
+	//TArray<AStarNode*> Connections;
+	//void AddConnection(AStarNode* Node) { Connections.Add(Node); }
 
 	AStarNode* FindNextNode(EPathSearch& SearchMode, FPath& path, const AStarNode* Start, const AStarNode* target);
 
@@ -102,10 +134,14 @@ public:
 		IMaterialChangeInterface::Execute_MatChange(this, click);
 	}
 
+	void SetNodeType(const ENodeType& type) { NodeType = type; }
+	bool IsBlock() const { return NodeType == ENodeType::NT_Block; }
 	TArray<AStarNode*> checkedNodes;
 	void CheckConnected();
 	void UnCheckConnected();
 
+private:
+	ENodeType NodeType = ENodeType::NT_None;
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -118,7 +154,7 @@ public:
 
 
 USTRUCT()
-struct FLine
+struct FLine	// SKIP THIS
 {
 	GENERATED_USTRUCT_BODY()
 
@@ -162,5 +198,6 @@ struct FLine
 	}
 };
 
-bool FindPath(FPath& path, AStarNode* Start, const AStarNode* Target);
+bool FindPath(FPath& path, AStarNode* Start, const AStarNode* Target);	// OLD
 
+TArray<AStarNode*> FindPath(AStarNode* Start, AStarNode* Target, TArray<AStarNode*>& arr);
