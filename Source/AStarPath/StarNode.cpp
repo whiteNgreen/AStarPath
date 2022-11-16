@@ -19,12 +19,11 @@ AStarNode::AStarNode()
 
 void AStarNode::CheckConnected()
 {
-	for (auto& it : ConnectedPaths)
+	for (auto& it : mConnectedNodes)
 	{
-		AStarNode* Node = it->GetOtherNode(this);
-		Node->MatChange_Pure(EMatType::CL_Checked);
-		checkedNodes.Add(Node);
-		PRINTPARLONG("Node : %s", *Node->GetName());
+		it->MatChange_Pure(EMatType::CL_Checked);
+		checkedNodes.Add(it);
+		PRINTPARLONG("Node : %s", *it->GetName());
 	}
 }
 
@@ -52,13 +51,6 @@ void AStarNode::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	if (bClicked)
-		PRINTPAR("Node paths = %i", ConnectedPaths.Num());
-
-	//for (const auto& it : ConnectedPaths)
-	//{
-	//	//it->ShowPath(GetWorld());
-	//}
 }
 
 int AStarNode::GetDistanceValue(const AStarNode* Target)
@@ -67,78 +59,9 @@ int AStarNode::GetDistanceValue(const AStarNode* Target)
 }
 void AStarNode::InitValues(const AStarNode* Start, const AStarNode* Target)
 {
-	//G = GetDistanceValue(Start);
 	H = GetDistanceValue(Target);
 	F = G + H;
 }
-bool FindPath(FPath& Path, AStarNode* Start, const AStarNode* Target)
-{
-	if (!Start || !Target) { return false; }
-
-	//AStarNode* current{ Start };
-	AStarNode* nextnode{ nullptr };
-	FLine* line{ nullptr };
-	EPathSearch Searchtype = EPathSearch::Start;
-
-	nextnode = Start->FindNextNode(Searchtype, Path, Start, Target);
-
-	if (Searchtype == EPathSearch::Found) { return true; }
-	return false;
-}
-AStarNode* AStarNode::FindNextNode(EPathSearch& SearchMode, FPath& path, const AStarNode* Start, const AStarNode* target)
-{
-	if (this == target) {
-		SearchMode = EPathSearch::Found;
-		PRINTPARLONG("FOUND TARGET");
-		return this;
-	}
-
-	int Final{ INT_MAX };
-	int Value{};
-	AStarNode* Node{ nullptr };
-	FLine* Path{ nullptr };
-
-	for (size_t i{}; i < ConnectedPaths.Num(); i++)
-	{
-		AStarNode* tmpNode = ConnectedPaths[i]->GetOtherNode(this);
-		if (path.ContainsNode(tmpNode)) { tmpNode = nullptr; continue; }
-		if (tmpNode == Start) { continue; }
-		if (tmpNode->IsBlock()) { continue; }
-
-		if (tmpNode == target){
-			SearchMode = EPathSearch::Found;
-			return tmpNode;
-		}
-
-		Value = ConnectedPaths[i]->Length + tmpNode->GetDistanceValue(target);
-		if (tmpNode != Start) {
-			tmpNode->MatChange_Pure(EMatType::CL_Checked);
-			path.AddCheckedNode(tmpNode);
-		}
-
-		if (Value < Final) {
-			Final = Value;
-			Path = ConnectedPaths[i];
-			SearchMode = EPathSearch::Search;
-			Node = tmpNode;
-		}
-	}
-	if (Node) {
-		path.AddPath(Node, Path, Value);
-		Node->MatChange_Pure(EMatType::CL_Path);
-
-		Node->FindNextNode(SearchMode, path, Start, target);
-	}
-	return Node;
-}
-
-//auto ChangeMat = [&](AStarNode* node, EMatType type) {
-//	IMaterialChangeInterface* mat = Cast<IMaterialChangeInterface>(node);
-//	if (mat) {
-//		mat->
-//	}
-//}
-
 TArray<AStarNode*> FindPath(AStarNode* Start, AStarNode* Target, TArray<AStarNode*>& arr)
 {
 	PRINTLONG("NEW FIND PATH");
@@ -164,10 +87,11 @@ TArray<AStarNode*> FindPath(AStarNode* Start, AStarNode* Target, TArray<AStarNod
 
 
 		if (current == Target) {
-			auto currentTile = Target;
+			/* Går bakover fra Target til Start */
+			AStarNode* currentTile = Target;
 			while (currentTile != Start) {
 				finalPath.Add(currentTile);
-				currentTile = currentTile->Connection;
+				currentTile = currentTile->GetConnection();
 			}
 			return finalPath;
 		}
@@ -175,20 +99,20 @@ TArray<AStarNode*> FindPath(AStarNode* Start, AStarNode* Target, TArray<AStarNod
 		Processed.Add(current);
 		ToSearch.Remove(current);
 
-		for (size_t t{}; t < current->ConnectedPaths.Num(); t++)
+		for (size_t t{}; t < current->mConnectedNodes.Num(); t++)
 		{
-			AStarNode* Neighbor = current->ConnectedPaths[t]->GetOtherNode(current);
+			AStarNode* Neighbor = current->mConnectedNodes[t];
 			bool inSearch = ToSearch.Contains(Neighbor);
 
 			if (Neighbor->IsBlock()) { continue; }
 			if (Processed.Contains(Neighbor)) { continue; }
 
-			int CostToNeighbor = current->G + current->ConnectedPaths[t]->Length;
+			int CostToNeighbor = current->G + current->GetDistanceValue(Neighbor);
 
 			if (!inSearch || CostToNeighbor < Neighbor->G)
 			{
 				Neighbor->SetG(CostToNeighbor);
-				Neighbor->Connection = current;
+				Neighbor->SetConnection(*current);
 
 				if (!inSearch) {
 					Neighbor->SetH(Target);

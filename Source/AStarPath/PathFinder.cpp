@@ -81,24 +81,20 @@ bool APathFinder::Trace(const EMatType& type)
 			if (mat) {
 				if (mat->MatType == type) {
 					mat->MatChange_Pure(EMatType::CL_None);
-					CollectedPath.ClearPath();
-					CollectedPath.ClearChecked();
 					/* UnChecks checked connected nodes */
-					//AStarNode* StartNode = Cast<AStarNode>(StartActor);
-					//if (StartNode)
-						//StartNode->UnCheckConnected();
+					AStarNode* startnode = Cast<AStarNode>(StartActor);
+					if (startnode)
+						startnode->UnCheckConnected();
 				}
 			}
 		}
 		StartActor = Hit.GetActor();
 
 		/* Check the Nodes Connected Nodes */
-		//AStarNode* StartNode = Cast<AStarNode>(StartActor);
-		//if (StartNode) {
-		//	CollectedPath.mStartNode = StartNode;
-		//	StartNode->CheckConnected();
-		//}
-		//else { CollectedPath.mStartNode = nullptr; }
+		AStarNode* startnode = Cast<AStarNode>(StartActor);
+		if (startnode) {
+			startnode->CheckConnected();
+		}
 		mat = Cast<IMaterialChangeInterface>(Hit.GetActor());
 		if (mat) mat->MatChange_Pure(type);
 		return true;
@@ -110,8 +106,6 @@ bool APathFinder::Trace(const EMatType& type)
 			if (mat) {
 				if (mat->MatType == type) {
 					mat->MatChange_Pure(EMatType::CL_None);
-					CollectedPath.ClearPath();
-					CollectedPath.ClearChecked();
 				}
 			}
 		}
@@ -137,7 +131,6 @@ bool APathFinder::Trace(const EMatType& type)
 				MT = EMatType::CL_Block;
 				N->SetNodeType(ENodeType::NT_Block);
 				BlockedNodes.Add(N);
-				//CollectedPath.RemoveNode(N);
 			}
 			mat->MatChange_Pure(MT);
 		}
@@ -148,8 +141,6 @@ bool APathFinder::Trace(const EMatType& type)
 	if (mat) {
 		if (mat->MatType == type) {
 			mat->MatChange_Pure(EMatType::CL_None);
-			CollectedPath.ClearPath();
-			CollectedPath.ClearChecked();
 		}
 	}
 	ClickedActor = Hit.GetActor();
@@ -214,15 +205,6 @@ void APathFinder::RightArrowPress()
 			static TArray<AStarNode*> tmp;
 			ClearArray(tmp);
 			ClearArray(NodePath);
-
-			CollectedPath.ClearPath();	//old
-			CollectedPath.ClearChecked();	//old
-
-			//for (auto& it : NodePath) {
-			//	IMaterialChangeInterface* mat = Cast<IMaterialChangeInterface>(it);
-			//	if (mat) mat->MatChange_Pure(EMatType::CL_None);
-			//}
-			//FindPath(CollectedPath, StartNode, TargetNode);
 
 			NodePath = FindPath(StartNode, TargetNode, tmp);
 			for (auto& it : NodePath) {

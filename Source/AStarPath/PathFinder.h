@@ -67,7 +67,7 @@ public:
 	AActor* StartActor{ nullptr };
 
 	AStarNode* current{ nullptr };
-	FPath CollectedPath;
+	//FPath CollectedPath;
 
 
 protected:

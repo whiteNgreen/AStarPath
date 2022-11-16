@@ -24,11 +24,9 @@ void AGridSpawner::BeginPlay()
 
 void AGridSpawner::SpawnGrid(int Rez)
 {
-	//GEngine->AddOnScreenDebugMessage(0, 1.f, FColor::Black, "SPAWN GRID");
-
-	TArray<AActor*> list;
-	AActor* a{ nullptr };
-	AActor* b{ nullptr };
+	TArray<AStarNode*> list;
+	AStarNode* a{ nullptr };
+	AStarNode* b{ nullptr };
 
 	for (size_t x{}; x < 10; x++)
 	{
@@ -36,8 +34,8 @@ void AGridSpawner::SpawnGrid(int Rez)
 		{
 			FVector Location = FVector(GetActorLocation().X + (GridSpacing * x) - (float)GridSize / 2, GetActorLocation().Y + (GridSpacing * y)-(float)GridSize / 2, GetActorLocation().Z);
 			FRotator Rotation;
-			AActor* t{ nullptr };
-			t = GetWorld()->SpawnActor<AActor>(SpawnClass, Location, Rotation);
+			AStarNode* t{ nullptr };
+			t = GetWorld()->SpawnActor<AStarNode>(SpawnClass, Location, Rotation);
 			list.AddUnique(t);
 		}
 	}
@@ -47,16 +45,15 @@ void AGridSpawner::SpawnGrid(int Rez)
 
 		a = list[i-1];
 		b = list[i];
-		FLine* F;
 		if (i%10 != 0 || i==0){
-			F = new FLine(a, b);
-			paths.AddUnique(F);
+			a->AddConnectedNode(b);
+			b->AddConnectedNode(a);
 		}
 
 		if (list.Num() < i + 10) { /*PRINTLONG("*1 CONTINUE");*/ continue; }
 		b = list[i-1 + 10];
-		F = new FLine(a, b);
-		paths.AddUnique(F);
+		a->AddConnectedNode(b);
+		b->AddConnectedNode(a);
 	}
 }
 
@@ -64,11 +61,5 @@ void AGridSpawner::SpawnGrid(int Rez)
 void AGridSpawner::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
-	for (const auto& it : paths)
-	{
-		it->ShowPath(GetWorld());
-	}
-	//PRINTPAR("paths : %i", paths.Num());
 }
 

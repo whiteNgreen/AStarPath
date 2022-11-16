@@ -32,8 +32,6 @@ public:
 	UPROPERTY(EditAnywhere)
 		TSubclassOf<AStarNode> SpawnClass;
 
-	//TArray<TUniquePtr<AStarNode>> Nodes;
-	TArray<FLine*> paths;
 
 protected:
 	// Called when the game starts or when spawned
