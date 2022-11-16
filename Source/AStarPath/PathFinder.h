@@ -23,7 +23,7 @@ public:
 
 
 	TArray<AStarNode*> NodePath;//old
-	TArray<AStarNode*> Nodes_Registered;//old
+	//TArray<AStarNode*> Nodes_Registered;//old
 	void ClearArray(TArray<AStarNode*>& arr){
 		for (auto& it : arr) {
 			if (it == StartNode || it == TargetNode) { continue; }

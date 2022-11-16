@@ -203,7 +203,7 @@ void APathFinder::RightArrowPress()
 		if (StartNode && TargetNode)
 		{
 			static TArray<AStarNode*> tmp;
-			ClearArray(tmp);
+			//ClearArray(tmp);
 			ClearArray(NodePath);
 
 			NodePath = FindPath(StartNode, TargetNode, tmp);

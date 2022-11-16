@@ -99,6 +99,7 @@ TArray<AStarNode*> FindPath(AStarNode* Start, AStarNode* Target, TArray<AStarNod
 		Processed.Add(current);
 		ToSearch.Remove(current);
 
+
 		for (size_t t{}; t < current->mConnectedNodes.Num(); t++)
 		{
 			AStarNode* Neighbor = current->mConnectedNodes[t];
