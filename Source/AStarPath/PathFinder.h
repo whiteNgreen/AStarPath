@@ -22,8 +22,8 @@ public:
 	APathFinder();
 
 
-	TArray<AStarNode*> NodePath;//old
-	//TArray<AStarNode*> Nodes_Registered;//old
+	TArray<AStarNode*> NodePath;
+	TArray<AStarNode*> Nodes_Registered;//old
 	void ClearArray(TArray<AStarNode*>& arr){
 		for (auto& it : arr) {
 			if (it == StartNode || it == TargetNode) { continue; }
@@ -69,6 +69,21 @@ public:
 	AStarNode* current{ nullptr };
 	//FPath CollectedPath;
 
+	/*--------------- B-SPLINE ----------------*/
+	int mSplineDegree = 2;
+	TArray<FVector> mSplineControlPoints{
+		FVector(0,0,0),
+		FVector(0,200,0),
+		FVector(200,200,0),
+		FVector(200,0,0)
+	};
+	TArray<float> mKnots;
+	void MakeKnotVector();
+	void MakeBSpline();
+	float splinetime{};
+	FVector GetPosAlongSpline(float t);
+	float Bid(float t, int it, int d);
+	float Wid(float t, int it, int d);
 
 protected:
 	// Called when the game starts or when spawned

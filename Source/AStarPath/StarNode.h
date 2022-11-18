@@ -39,7 +39,10 @@ public:
 
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		USceneComponent* root{ nullptr };
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		class UStaticMeshComponent* mesh{ nullptr };
+
 	bool bClicked{};
 
 

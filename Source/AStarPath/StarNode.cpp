@@ -12,8 +12,11 @@ AStarNode::AStarNode()
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
+	//root = CreateDefaultSubobject<USceneComponent>(TEXT("ROOT"));
+	//RootComponent = root;
 	mesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("MESH"));
-	RootComponent = mesh;
+	mesh->SetupAttachment(RootComponent);
+	//RootComponent = mesh;
 
 }
 
@@ -93,6 +96,7 @@ TArray<AStarNode*> FindPath(AStarNode* Start, AStarNode* Target, TArray<AStarNod
 				finalPath.Add(currentTile);
 				currentTile = currentTile->GetConnection();
 			}
+			finalPath.Add(Start);
 			return finalPath;
 		}
 
